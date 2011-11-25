@@ -14,21 +14,26 @@
 
 struct mem_entry;
 
+/*! \brief Memory header */
 struct mem_header {
-  const uint16_t guard;
+  const uint16_t guard;          /*!< Memory guard to identify a sane input. */
 
-  uintptr_t ptr_size;
+  uintptr_t ptr_size;            /*!< Size of data pointer. */
 
   // NOTE: Use uint16 instead? Overhead for 2**32 children would be 160GiB by itself
-  uint32_t num_children;
-  struct mem_entry** children;
+  uint32_t num_children;         /*!< Number of children this pointer holds */ 
+  struct mem_entry** children;   /*!< Children. */
 
-  struct mem_entry* parent;
+  struct mem_entry* parent;      /*!< Parent context of this pointer. */
  };
 
-
+/*! \brief Memory context used by xalloc functions */
 struct mem_entry {
-  struct mem_header header;
+  /*! Memory header, contains everything needed to manage
+      pointers.
+   */
+  struct mem_header header; 
+  /*! Data pointer. This is what is actually returned to the user. */
   uint8_t data[];
 };
 
@@ -43,10 +48,7 @@ static void xalloc_add_child(struct mem_entry* parent, struct mem_entry* child) 
 static struct mem_entry* xalloc_new_entry(const void *ptr, size_t size) {
   struct mem_entry* ctx;
 
-  // FIXME: valgrind reports invalid read / writes on malloc.
-  // I think has to do with the pointer manipulation going on
-  // and is actually a false positive
-  const size_t alloc_size = sizeof(struct mem_entry) + size + 8;
+  const size_t alloc_size = sizeof(struct mem_entry) + size;
 
   /* no parent, create new root entry */
   if(ptr == NULL) {
@@ -132,9 +134,9 @@ void* xalloc_steal(const void* new, const void* ptr) {
   assert(0 && "Entry is not a child of parent");
 }
 
-char* xalloc_strndup(const void* ptr, const char* string, size_t size) {
-  struct mem_entry *ctx = xalloc_new_entry(ptr, size + 1);
-  memcpy(ctx->data, string, size);
+char* xalloc_strndup(const void* ptr, const char* str, size_t sz) {
+  struct mem_entry *ctx = xalloc_new_entry(ptr, sz + 1);
+  memcpy(ctx->data, str, sz);
 
   return (char*)(ctx->data);
 }

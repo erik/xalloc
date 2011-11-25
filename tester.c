@@ -17,13 +17,13 @@ typedef struct linked_list {
 
 int main() {
 
-  linked_list *root = xalloc(NULL, sizeof(linked_list));
+  linked_list *root = xalloc(NULL, linked_list);
 
   linked_list *nxt = root;
 
   for(int i = 0; i < 100; ++i) {
-    nxt->next = xalloc(nxt, sizeof(linked_list));
-    nxt->value = xalloc(nxt, sizeof(A));
+    nxt->next = xalloc(nxt, linked_list);
+    nxt->value = xalloc(nxt, A);
 
     nxt->value->x = i;
     nxt->value->str = xalloc_asprintf(nxt, "%d.", i);
