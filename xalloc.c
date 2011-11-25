@@ -43,9 +43,16 @@ static void xalloc_add_child(struct mem_entry* parent, struct mem_entry* child) 
 static struct mem_entry* xalloc_new_entry(const void *ptr, unsigned size) {
   struct mem_entry* ctx;
 
+  // FIXME: valgrind reports invalid read / writes on malloc. 
+  // I think has to do with the pointer manipulation going on
+  // and is actually a false positive
+  const unsigned alloc_size = sizeof(struct mem_entry) + size + 8;
+
   /* no parent, create new root entry */
   if(ptr == NULL) {
-    ctx = calloc(sizeof(struct mem_entry) + size, 1);
+    ctx = malloc(alloc_size);
+    memset(ctx, 0, alloc_size);
+
     ctx->header = MEM_HEADER(size, 0, NULL, NULL);
 
     return ctx;
@@ -53,7 +60,9 @@ static struct mem_entry* xalloc_new_entry(const void *ptr, unsigned size) {
     struct mem_entry* parent = POINTER_TO_ENTRY(ptr);
     assert(parent->header.guard == HEADER_MAGIC_GUARD);
 
-    ctx = calloc(sizeof(struct mem_entry) + size, 1);
+    ctx = malloc(alloc_size);
+    memset(ctx, 0, alloc_size);
+
     ctx->header = MEM_HEADER(size, 0, NULL, parent);
 
     xalloc_add_child(parent, ctx);
@@ -130,29 +139,19 @@ char* xalloc_strndup(const void* ptr, const char* string, unsigned size) {
   return (char*)(ctx->data);
 }
 
-#ifdef _GNU_SOURCE
-
 char* xalloc_asprintf(const void* ptr, const char* fmt, ...) {
-  char* string;
-
   va_list ap;
   va_start(ap, fmt);
-  vasprintf(&string, fmt, ap);
+  
+  int length = vsnprintf(NULL, 0, fmt, ap);
+  
   va_end(ap);
 
-  char* result = xalloc_strndup(ptr, string, strlen(string));
-  free(string);
+  char *string = xalloc_new(ptr, length + 1);
 
-  return result;
+  va_start(ap, fmt);
+  vsnprintf(string, length + 1, fmt, ap);
+  va_end(ap);
+
+  return string;
 }
-
-#else
-
-char* xalloc_asprintf(const void* ptr, const char* fmt, ...) {
-  (void)(ptr);
-  (void)(fmt);
-  assert(0 && "_GNU_SOURCE not defined, can't use asprintf");
-  return NULL;
-}
-
-#endif /* ifdef _GNU_SOURCE */

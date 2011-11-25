@@ -10,17 +10,35 @@ typedef struct A {
   char* str;
 } A;
 
+typedef struct linked_list {
+  struct linked_list *next;
+  struct A *value;
+} linked_list;
+
 int main() {
 
-  A* ptr = xalloc(NULL, sizeof(A));
-  ptr->str = xalloc_asprintf(ptr, "%d%d%d", 3, 2, 1);
-  xalloc_steal(ptr, ptr->str);
+  linked_list *root = xalloc(NULL, sizeof(linked_list));
+  
+  linked_list *nxt = root;
 
-  ptr->x = 111;
+  for(int i = 0; i < 100; ++i) {
+    nxt->next = xalloc(nxt, sizeof(linked_list));
+    nxt->value = xalloc(nxt, sizeof(A));
 
-  printf("%d => %s\n", ptr->x, ptr->str);
+    nxt->value->x = i;
+    nxt->value->str = xalloc_asprintf(nxt, "%d.", i);
 
-  xalloc_free(ptr);
+    nxt = nxt->next;
+  }
+
+  nxt = root;
+  for(int i = 0; i < 100; ++i) {
+    printf("%d (%s), ", nxt->value->x, nxt->value->str);
+    nxt = nxt->next;
+  }
+
+
+  xalloc_free(root);
 
   return 0;
 }
