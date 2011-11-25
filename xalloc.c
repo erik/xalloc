@@ -40,13 +40,13 @@ static void xalloc_add_child(struct mem_entry* parent, struct mem_entry* child) 
   parent->header.children[parent->header.num_children - 1] = child;
 }
 
-static struct mem_entry* xalloc_new_entry(const void *ptr, unsigned size) {
+static struct mem_entry* xalloc_new_entry(const void *ptr, size_t size) {
   struct mem_entry* ctx;
 
-  // FIXME: valgrind reports invalid read / writes on malloc. 
+  // FIXME: valgrind reports invalid read / writes on malloc.
   // I think has to do with the pointer manipulation going on
   // and is actually a false positive
-  const unsigned alloc_size = sizeof(struct mem_entry) + size + 8;
+  const size_t alloc_size = sizeof(struct mem_entry) + size + 8;
 
   /* no parent, create new root entry */
   if(ptr == NULL) {
@@ -71,7 +71,7 @@ static struct mem_entry* xalloc_new_entry(const void *ptr, unsigned size) {
   }
 }
 
-void* xalloc_new(const void* ptr, unsigned size) {
+void* xalloc_new(const void* ptr, size_t size) {
   struct mem_entry* ctx = xalloc_new_entry(ptr, size);
   return ctx->data;
 }
@@ -132,7 +132,7 @@ void* xalloc_steal(const void* new, const void* ptr) {
   assert(0 && "Entry is not a child of parent");
 }
 
-char* xalloc_strndup(const void* ptr, const char* string, unsigned size) {
+char* xalloc_strndup(const void* ptr, const char* string, size_t size) {
   struct mem_entry *ctx = xalloc_new_entry(ptr, size + 1);
   memcpy(ctx->data, string, size);
 
@@ -142,9 +142,9 @@ char* xalloc_strndup(const void* ptr, const char* string, unsigned size) {
 char* xalloc_asprintf(const void* ptr, const char* fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
-  
+
   int length = vsnprintf(NULL, 0, fmt, ap);
-  
+
   va_end(ap);
 
   char *string = xalloc_new(ptr, length + 1);
@@ -155,3 +155,4 @@ char* xalloc_asprintf(const void* ptr, const char* fmt, ...) {
 
   return string;
 }
+

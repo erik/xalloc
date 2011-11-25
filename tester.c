@@ -18,7 +18,7 @@ typedef struct linked_list {
 int main() {
 
   linked_list *root = xalloc(NULL, sizeof(linked_list));
-  
+
   linked_list *nxt = root;
 
   for(int i = 0; i < 100; ++i) {
@@ -42,3 +42,4 @@ int main() {
 
   return 0;
 }
+
